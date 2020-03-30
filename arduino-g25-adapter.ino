@@ -7,6 +7,17 @@
 #define SHIFTER_LATCH_PIN PB6
 #define SHIFTER_DATA_PIN PB8
 
+#define PEDAL_ACC_PIN PA3
+#define PEDAL_ACC_LT 350
+#define PEDAL_ACC_HT 3700
+#define PEDAL_BRK_PIN PA2
+#define PEDAL_BRK_LT 350
+#define PEDAL_BRK_HT 3750
+#define PEDAL_CLT_PIN PA1
+#define PEDAL_CLT_LT 250
+#define PEDAL_CLT_HT 3680
+
+
 #define HID_SIGNED_JOYSTICK_REPORT_DESCRIPTOR(...) \
   0x05, 0x01,           /*  Usage Page (Generic Desktop) */ \
   0x09, 0x04,           /*  Usage (Joystick) */ \
@@ -102,6 +113,10 @@ void setup() {
   pinMode(SHIFTER_CLOCK_PIN, OUTPUT);
   pinMode(SHIFTER_DATA_PIN, INPUT);
 
+  pinMode(PEDAL_ACC_PIN, INPUT_ANALOG);
+  pinMode(PEDAL_BRK_PIN, INPUT_ANALOG);
+  pinMode(PEDAL_CLT_PIN, INPUT_ANALOG);
+
   HID.setReportDescriptor(signedJoyReportDescriptor, sizeof(signedJoyReportDescriptor));
   HID.registerComponent();
   USBComposite.begin();  
@@ -109,8 +124,8 @@ void setup() {
 }
 
 void loop() {
-  int shifterX = analogRead(SHIFTER_X_PIN);
-  int shifterY = analogRead(SHIFTER_Y_PIN);
+  uint16_t shifterX = analogRead(SHIFTER_X_PIN);
+  uint16_t shifterY = analogRead(SHIFTER_Y_PIN);
 
   boolean reg[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint16_t buttons = 0;
@@ -121,25 +136,61 @@ void loop() {
     buttons |= (reg[i] << i);
   }
   
-  if(shifterY > 2900){
-    if(shifterX < 1600)
-      gear = 1; // Gear: 1
-    else if(shifterX > 2600)
-      gear = (1 << 4); // Gear: 5
+  if(reg[3]){   // Sequential 
+    if(shifterY > 2300)
+      gear = (1 << 7); // Gear up
+    else if(shifterY < 1800)
+      gear = (1 << 8); // Gear down
     else
-      gear = (1 << 2); // Gear: 3
-  } else if(shifterY < 1000){
-    if(shifterX < 1600)
-      gear = (1 << 1); // Gear: 2
-    else if(shifterX > 2600)
-      gear = reg[1] ? (1 << 6) : (1 << 5) ; // Gear: R(7) or 6
-    else
-      gear = (1 << 3); // Gear: 4
-  }
-  else{
-    gear = 0; // Gear: N
+      gear = 0; // Gear: N
+  }else{ // H
+    if(shifterY > 3000){
+      if(shifterX < 1600)
+        gear = 1; // Gear: 1
+      else if(shifterX > 2600)
+        gear = (1 << 4); // Gear: 5
+      else
+        gear = (1 << 2); // Gear: 3
+    } else if(shifterY < 1000){
+      if(shifterX < 1600)
+        gear = (1 << 1); // Gear: 2
+      else if(shifterX > 2600)
+        gear = reg[1] ? (1 << 6) : (1 << 5) ; // Gear: R(7) or 6
+      else
+        gear = (1 << 3); // Gear: 4
+    }
+    else{
+      gear = 0; // Gear: N
+    }
   }
   joy.joyReport.buttons = ((uint32_t)buttons << 16) | gear;
+
+  uint16_t pedalAcc = analogRead(PEDAL_ACC_PIN);
+  uint16_t pedalBrk = analogRead(PEDAL_BRK_PIN);
+  uint16_t pedalClt = analogRead(PEDAL_CLT_PIN);
+
+  if(pedalAcc >= PEDAL_ACC_HT)
+    joy.joyReport.x = -1024;
+  else if(pedalAcc <= PEDAL_ACC_LT)
+    joy.joyReport.x = 1023;
+  else
+    joy.joyReport.x = map(pedalAcc, PEDAL_ACC_LT, PEDAL_ACC_HT, 1023, -1024);
+
+
+  if(pedalBrk >= PEDAL_BRK_HT)
+    joy.joyReport.y = -1024;
+  else if(pedalBrk <= PEDAL_BRK_LT)
+    joy.joyReport.y = 1023;
+  else
+    joy.joyReport.y = map(pedalBrk, PEDAL_BRK_LT, PEDAL_BRK_HT, 1023, -1024);
+
+  if(pedalClt >= PEDAL_CLT_HT)
+    joy.joyReport.sliderLeft = 0;
+  else if(pedalClt <= PEDAL_CLT_LT)
+    joy.joyReport.sliderLeft = 1023;
+  else
+    joy.joyReport.sliderLeft = map(pedalClt, PEDAL_CLT_LT, PEDAL_CLT_HT, 1023, 0);
+  
   joy.sendReport(); 
 }
 
