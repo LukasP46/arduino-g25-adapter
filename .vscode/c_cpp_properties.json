@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:\\Users\\Spjs0\\Documents\\Arduino\\**",
+                "C:\\Users\\Spjs0\\AppData\\Local\\Arduino15\\packages\\STM32\\tools\\**",
+                "C:\\Users\\Spjs0\\AppData\\Local\\Arduino15\\packages\\STM32\\hardware\\stm32\\1.8.0\\**",
+                "G:\\Arduino\\tools\\**",
+                "G:\\Arduino\\hardware\\arduino\\avr\\**",
+                "C:\\Users\\Spjs0\\Documents\\Arduino\\hardware\\Arduino_STM32\\STM32F1\\**"
+            ],
+            "forcedInclude": [],
+            "intelliSenseMode": "msvc-x64"
+        }
+    ],
+    "version": 4
+}
