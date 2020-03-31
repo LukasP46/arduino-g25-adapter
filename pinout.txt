@@ -59,9 +59,9 @@ JoyStick:
 
 # Wiring
 1 GND    GND
-2 Gas    PA1
+2 Gas    PA3
 3 Brake  PA2
-4 Clutch PA3
+4 Clutch PA1
 5 -
 6 VCC
 7 -
